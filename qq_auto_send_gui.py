@@ -13,7 +13,7 @@ class QQAutoSenderGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("QQ自动发送消息")
-        self.root.geometry("600x500")  # 增加窗口高度
+        self.root.geometry("600x600")  # 增加窗口高度
         
         # 加载配置
         self.load_config()
@@ -24,6 +24,13 @@ class QQAutoSenderGUI:
         # 定时任务线程
         self.schedule_thread = None
         self.is_running = False
+        
+        # 默认启动定时任务
+        self.schedule_var.set(True)  # 设置复选框为选中状态
+        self.config['schedule']['enabled'] = True  # 修改配置
+        self.save_config()  # 保存配置
+        self.start_schedule()  # 启动定时任务
+        print("程序启动时已自动开启定时任务")
 
     def load_config(self):
         try:
@@ -50,17 +57,12 @@ class QQAutoSenderGUI:
         user_frame = ttk.LabelFrame(main_frame, text='用户列表')
         user_frame.pack(fill='both', expand=True, padx=5, pady=5)
 
-        # 修改用户列表列定义
-        self.user_tree = ttk.Treeview(user_frame, columns=('选择', 'QQ号', '名称', '状态'), show='headings')
-        self.user_tree.heading('选择', text='选择')
+        # 创建用户列表 - 恢复原来的列定义
+        self.user_tree = ttk.Treeview(user_frame, columns=('QQ号', '名称', '状态'), show='headings')
         self.user_tree.heading('QQ号', text='QQ号')
         self.user_tree.heading('名称', text='名称')
         self.user_tree.heading('状态', text='状态')
-        self.user_tree.column('选择', width=50, anchor='center')
         self.user_tree.pack(fill='both', expand=True, padx=5, pady=5)
-
-        # 添加复选框
-        self.user_tree.bind('<Button-1>', self.on_tree_click)
 
         # 加载用户列表
         self.refresh_user_list()
@@ -112,15 +114,15 @@ class QQAutoSenderGUI:
         for item in self.user_tree.get_children():
             self.user_tree.delete(item)
         
-        # 添加用户
+        # 添加用户 - 恢复原来的添加方式
         for user in self.config['users']:
             status = '启用' if user['enabled'] else '禁用'
-            self.user_tree.insert('', 'end', values=('☐', user['qq'], user['name'], status))
+            self.user_tree.insert('', 'end', values=(user['qq'], user['name'], status))
 
     def add_user_dialog(self):
         dialog = tk.Toplevel(self.root)
         dialog.title('添加用户')
-        dialog.geometry('300x150')
+        dialog.geometry('300x200')
 
         ttk.Label(dialog, text='QQ号：').pack(pady=5)
         qq_entry = ttk.Entry(dialog)
@@ -156,7 +158,7 @@ class QQAutoSenderGUI:
         if messagebox.askyesno('确认', '确定要删除选中的用户吗？'):
             for item in selected:
                 values = self.user_tree.item(item)['values']
-                qq = values[1]
+                qq = values[0]  # QQ号在第一列
                 self.config['users'] = [u for u in self.config['users'] if u['qq'] != qq]
             
             self.save_config()
@@ -177,19 +179,15 @@ class QQAutoSenderGUI:
             self.status_label['text'] = 'QQ启动失败'
             return
 
-        # 遍历发送消息
-        for item in self.user_tree.get_children():
-            values = self.user_tree.item(item)['values']
-            if values[0] == '☑':  # 只发送选中的用户
-                qq = values[1]
-                user = next((u for u in self.config['users'] if u['qq'] == qq), None)
-                if user and user['enabled']:
-                    try:
-                        if search_user(user['qq']):
-                            send_message()
-                            time.sleep(2)
-                    except Exception as e:
-                        print(f"发送给{user['qq']}失败: {e}")
+        # 遍历发送消息 - 恢复原来的发送所有启用用户的逻辑
+        for user in self.config['users']:
+            if user['enabled']:
+                try:
+                    if search_user(user['qq']):
+                        send_message()
+                        time.sleep(2)
+                except Exception as e:
+                    print(f"发送给{user['qq']}失败: {e}")
 
         self.status_label['text'] = '发送完成'
 
@@ -243,16 +241,6 @@ class QQAutoSenderGUI:
         self.config['message_template'] = new_template
         self.save_config()
         messagebox.showinfo('成功', '消息模板已保存')
-
-    def on_tree_click(self, event):
-        region = self.user_tree.identify_region(event.x, event.y)
-        if region == "cell":
-            column = self.user_tree.identify_column(event.x)
-            if column == "#1":  # 第一列是复选框列
-                item = self.user_tree.identify_row(event.y)
-                current_value = self.user_tree.set(item, '选择')
-                new_value = '☑' if current_value != '☑' else '☐'
-                self.user_tree.set(item, '选择', new_value)
 
 def main():
     root = tk.Tk()

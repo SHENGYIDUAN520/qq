@@ -2,8 +2,23 @@
     "qq_path": "D:\\Software\\QQ\\QQ.exe",
     "users": [
         {
-            "qq": "2402659629",
-            "name": "默认用户",
+            "qq": "2210612015",
+            "name": "邱禹铭",
+            "enabled": true
+        },
+        {
+            "qq": "239318028",
+            "name": "刘哲",
+            "enabled": true
+        },
+        {
+            "qq": "1966557466",
+            "name": "李文博",
+            "enabled": true
+        },
+        {
+            "qq": "2711782259",
+            "name": "于涵",
             "enabled": true
         }
     ],

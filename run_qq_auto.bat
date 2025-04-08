@@ -1,3 +1,3 @@
 @echo off
-python qq_auto_send.py
+python qq_auto_send_gui.py
 pause 
