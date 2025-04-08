@@ -4,6 +4,7 @@ import time
 import os
 import subprocess
 import json
+import pyperclip
 
 def load_config():
     with open('config.json', 'r', encoding='utf-8') as f:
@@ -75,8 +76,9 @@ def send_message():
     config = load_config()
     message_template = config['message_template']
     
-    # 生成随机数字
+    # 生成3位随机数字（100-999）
     random_code = random.randint(100, 999)
+    
     message = message_template.format(code=random_code)
     
     # 获取屏幕尺寸
@@ -88,8 +90,12 @@ def send_message():
     pyautogui.click(input_box_x, input_box_y)
     time.sleep(1)
     
-    # 模拟键盘输入消息
-    pyautogui.typewrite(message)
+    # 使用pyperclip复制消息到剪贴板
+    pyperclip.copy(message)
+    time.sleep(1)
+    
+    # 粘贴消息
+    pyautogui.hotkey('ctrl', 'v')
     time.sleep(1)
     
     # 点击发送按钮（或按回车发送）
