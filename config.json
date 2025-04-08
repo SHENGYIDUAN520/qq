@@ -10,7 +10,7 @@
     "schedule": {
         "enabled": true,
         "hour": 22,
-        "minute": 30
+        "minute": 40
     },
     "message_template": "代码{code}，若请假请忽略此条消息，感谢配合。"
 }

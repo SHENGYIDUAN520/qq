@@ -50,12 +50,17 @@ class QQAutoSenderGUI:
         user_frame = ttk.LabelFrame(main_frame, text='用户列表')
         user_frame.pack(fill='both', expand=True, padx=5, pady=5)
 
-        # 创建用户列表
-        self.user_tree = ttk.Treeview(user_frame, columns=('QQ号', '名称', '状态'), show='headings')
+        # 修改用户列表列定义
+        self.user_tree = ttk.Treeview(user_frame, columns=('选择', 'QQ号', '名称', '状态'), show='headings')
+        self.user_tree.heading('选择', text='选择')
         self.user_tree.heading('QQ号', text='QQ号')
         self.user_tree.heading('名称', text='名称')
         self.user_tree.heading('状态', text='状态')
+        self.user_tree.column('选择', width=50, anchor='center')
         self.user_tree.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # 添加复选框
+        self.user_tree.bind('<Button-1>', self.on_tree_click)
 
         # 加载用户列表
         self.refresh_user_list()
@@ -110,7 +115,7 @@ class QQAutoSenderGUI:
         # 添加用户
         for user in self.config['users']:
             status = '启用' if user['enabled'] else '禁用'
-            self.user_tree.insert('', 'end', values=(user['qq'], user['name'], status))
+            self.user_tree.insert('', 'end', values=('☐', user['qq'], user['name'], status))
 
     def add_user_dialog(self):
         dialog = tk.Toplevel(self.root)
@@ -151,7 +156,7 @@ class QQAutoSenderGUI:
         if messagebox.askyesno('确认', '确定要删除选中的用户吗？'):
             for item in selected:
                 values = self.user_tree.item(item)['values']
-                qq = values[0]
+                qq = values[1]
                 self.config['users'] = [u for u in self.config['users'] if u['qq'] != qq]
             
             self.save_config()
@@ -173,14 +178,18 @@ class QQAutoSenderGUI:
             return
 
         # 遍历发送消息
-        for user in self.config['users']:
-            if user['enabled']:
-                try:
-                    if search_user(user['qq']):
-                        send_message()
-                        time.sleep(2)
-                except Exception as e:
-                    print(f"发送给{user['qq']}失败: {e}")
+        for item in self.user_tree.get_children():
+            values = self.user_tree.item(item)['values']
+            if values[0] == '☑':  # 只发送选中的用户
+                qq = values[1]
+                user = next((u for u in self.config['users'] if u['qq'] == qq), None)
+                if user and user['enabled']:
+                    try:
+                        if search_user(user['qq']):
+                            send_message()
+                            time.sleep(2)
+                    except Exception as e:
+                        print(f"发送给{user['qq']}失败: {e}")
 
         self.status_label['text'] = '发送完成'
 
@@ -197,6 +206,7 @@ class QQAutoSenderGUI:
     def start_schedule(self):
         if self.schedule_thread is None or not self.schedule_thread.is_alive():
             self.is_running = True
+            print("定时任务已启动")  # 添加调试信息
             self.schedule_thread = threading.Thread(target=self.schedule_loop)
             self.schedule_thread.daemon = True
             self.schedule_thread.start()
@@ -212,9 +222,11 @@ class QQAutoSenderGUI:
         # 设置定时任务
         hour = int(self.hour_var.get())
         minute = int(self.minute_var.get())
+        print(f"定时任务已设置：每天 {hour:02d}:{minute:02d} 执行")  # 添加调试信息
         schedule.every().day.at(f"{hour:02d}:{minute:02d}").do(self.send_to_all_users)
         
         while self.is_running:
+            print("定时任务运行中...")  # 添加调试信息
             schedule.run_pending()
             time.sleep(30)
 
@@ -231,6 +243,16 @@ class QQAutoSenderGUI:
         self.config['message_template'] = new_template
         self.save_config()
         messagebox.showinfo('成功', '消息模板已保存')
+
+    def on_tree_click(self, event):
+        region = self.user_tree.identify_region(event.x, event.y)
+        if region == "cell":
+            column = self.user_tree.identify_column(event.x)
+            if column == "#1":  # 第一列是复选框列
+                item = self.user_tree.identify_row(event.y)
+                current_value = self.user_tree.set(item, '选择')
+                new_value = '☑' if current_value != '☑' else '☐'
+                self.user_tree.set(item, '选择', new_value)
 
 def main():
     root = tk.Tk()
