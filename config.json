@@ -1,0 +1,16 @@
+{
+    "qq_path": "D:\\Software\\QQ\\QQ.exe",
+    "users": [
+        {
+            "qq": "2402659629",
+            "name": "默认用户",
+            "enabled": true
+        }
+    ],
+    "schedule": {
+        "enabled": true,
+        "hour": 22,
+        "minute": 30
+    },
+    "message_template": "代码{code}，若请假请忽略此条消息，谢谢。"
+}

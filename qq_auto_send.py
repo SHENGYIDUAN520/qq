@@ -3,6 +3,11 @@ import random
 import time
 import os
 import subprocess
+import json
+
+def load_config():
+    with open('config.json', 'r', encoding='utf-8') as f:
+        return json.load(f)
 
 def open_qq():
     # 尝试通过进程名查找QQ
@@ -14,7 +19,8 @@ def open_qq():
         pass
     
     # 启动QQ
-    qq_path = r"D:\Software\QQ\QQ.exe"  # 保持原有路径
+    config = load_config()
+    qq_path = config['qq_path']  # 从配置文件读取QQ路径
     if os.path.exists(qq_path):
         subprocess.Popen([qq_path])
     else:
@@ -65,9 +71,13 @@ def search_user(qq_number):
 
 def send_message():
     print("准备发送消息...")
+    # 从配置文件读取消息模板
+    config = load_config()
+    message_template = config['message_template']
+    
     # 生成随机数字
     random_code = random.randint(100, 999)
-    message = f"代码{random_code}，若请假请忽略此条消息，谢谢。"
+    message = message_template.format(code=random_code)
     
     # 获取屏幕尺寸
     screen_width, screen_height = pyautogui.size()
@@ -87,29 +97,17 @@ def send_message():
     
     print(f"消息已发送！随机码：{random_code}")
 
-def main():
-    print("QQ自动发送消息程序启动...")
-    print("请确保：")
-    print("1. QQ已经登录")
-    print("2. 电脑已连接网络")
-    print("3. QQ窗口处于正常大小（不要最小化）")
-    print("4. QQ窗口在最前面")
-    
-    # 要发送消息的QQ号
-    target_qq = "2402659629"
-    
-    # 打开QQ
-    if not open_qq():
-        return
-    
-    # 搜索用户
-    if not search_user(target_qq):
-        return
-    
-    # 发送消息
-    send_message()
-
 if __name__ == "__main__":
     # 设置pyautogui的安全设置
     pyautogui.FAILSAFE = True
-    main() 
+    
+    # 打开QQ
+    if not open_qq():
+        exit(1)
+    
+    # 搜索用户
+    if not search_user("2402659629"):
+        exit(1)
+    
+    # 发送消息
+    send_message() 
