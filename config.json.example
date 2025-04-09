@@ -1,0 +1,21 @@
+{
+    "qq_path": "C:\\Program Files\\Tencent\\QQ\\Bin\\QQ.exe",
+    "users": [
+        {
+            "qq": "123456789",
+            "name": "张三",
+            "enabled": true
+        },
+        {
+            "qq": "987654321",
+            "name": "李四",
+            "enabled": false
+        }
+    ],
+    "schedule": {
+        "enabled": true,
+        "hour": 8,
+        "minute": 30
+    },
+    "message_template": "代码{code}，若请假请忽略此条消息，感谢配合。"
+} 
