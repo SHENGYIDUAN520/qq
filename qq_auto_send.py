@@ -81,13 +81,32 @@ def send_message():
     
     message = message_template.format(code=random_code)
     
-    # 获取屏幕尺寸
-    screen_width, screen_height = pyautogui.size()
+    try:
+        # 查找输入框图像
+        print("正在寻找输入框...")
+        input_box = pyautogui.locateOnScreen('copy.png', confidence=0.8)
+        if input_box:
+            # 点击输入框中心位置
+            center = pyautogui.center(input_box)
+            pyautogui.click(center)
+            print("找到并点击了输入框")
+        else:
+            print("未找到输入框，使用默认位置点击")
+            # 获取屏幕尺寸
+            screen_width, screen_height = pyautogui.size()
+            # 点击聊天窗口底部中间的输入框
+            input_box_x = screen_width // 2  # 屏幕中间
+            input_box_y = screen_height - 150  # 距离底部150像素
+            pyautogui.click(input_box_x, input_box_y)
+    except Exception as e:
+        print(f"输入框识别出错: {e}，使用默认位置点击")
+        # 获取屏幕尺寸
+        screen_width, screen_height = pyautogui.size()
+        # 点击聊天窗口底部中间的输入框
+        input_box_x = screen_width // 2  # 屏幕中间
+        input_box_y = screen_height - 150  # 距离底部150像素
+        pyautogui.click(input_box_x, input_box_y)
     
-    # 点击聊天窗口底部中间的输入框
-    input_box_x = screen_width // 2  # 屏幕中间
-    input_box_y = screen_height - 150  # 距离底部150像素
-    pyautogui.click(input_box_x, input_box_y)
     time.sleep(1)
     
     # 使用pyperclip复制消息到剪贴板
