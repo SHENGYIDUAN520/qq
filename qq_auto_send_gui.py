@@ -9,6 +9,17 @@ import sys
 import os
 from qq_auto_send import send_message, search_user, open_qq
 
+# Helper function to get the correct path for data files
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 class QQAutoSenderGUI:
     def __init__(self, root):
         self.root = root
@@ -23,6 +34,7 @@ class QQAutoSenderGUI:
         self.configure_styles()
         
         # 加载配置
+        self.config_path = resource_path('config.json') # Store config path
         self.load_config()
         
         # 创建界面
@@ -32,12 +44,17 @@ class QQAutoSenderGUI:
         self.schedule_thread = None
         self.is_running = False
         
-        # 默认启动定时任务
-        self.schedule_var.set(True)  # 设置复选框为选中状态
-        self.config['schedule']['enabled'] = True  # 修改配置
-        self.save_config()  # 保存配置
-        self.start_schedule()  # 启动定时任务
-        print("程序启动时已自动开启定时任务")
+        # 默认启动定时任务 (Check if config loaded successfully first)
+        if hasattr(self, 'config') and self.config:
+            self.schedule_var.set(self.config['schedule']['enabled'])
+            if self.config['schedule']['enabled']:
+                self.start_schedule()
+                print("程序启动时已自动开启定时任务")
+            else:
+                print("程序启动时定时任务未开启")
+        else:
+            # Handle case where config loading failed earlier
+            messagebox.showerror("启动错误", "无法加载配置，部分功能可能无法使用")
 
     def configure_styles(self):
         # 配置Treeview样式
@@ -97,15 +114,28 @@ class QQAutoSenderGUI:
 
     def load_config(self):
         try:
-            with open('config.json', 'r', encoding='utf-8') as f:
+            with open(self.config_path, 'r', encoding='utf-8') as f:
                 self.config = json.load(f)
         except FileNotFoundError:
-            messagebox.showerror("错误", "未找到配置文件config.json")
-            sys.exit(1)
+            messagebox.showerror("错误", f"未找到配置文件 {self.config_path}")
+            # Don't exit, let the GUI start but maybe disable features
+            self.config = None 
+        except json.JSONDecodeError:
+            messagebox.showerror("错误", f"配置文件 {self.config_path} 格式错误")
+            self.config = None
+        except Exception as e:
+            messagebox.showerror("错误", f"加载配置文件时出错: {e}")
+            self.config = None
 
     def save_config(self):
-        with open('config.json', 'w', encoding='utf-8') as f:
-            json.dump(self.config, f, ensure_ascii=False, indent=4)
+        if self.config is None:
+            messagebox.showerror("错误", "配置未加载，无法保存")
+            return
+        try:
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, ensure_ascii=False, indent=4)
+        except Exception as e:
+            messagebox.showerror("错误", f"保存配置文件时出错: {e}")
 
     def create_widgets(self):
         # 主容器使用Padding
